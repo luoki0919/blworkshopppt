@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From Idea to Video: Build Your Own Branching Scenario with AI</title>
+  <style>
+    :root {
+      --bg-dark-start: #160a26;
+      --bg-dark-mid: #27103d;
+      --bg-dark-end: #3b144d;
+      
+      --bg-light: #faf5f8;
+      --surface-white: #ffffff;
+      
+      --text-dark-primary: #1e1b4b;
+      --text-dark-secondary: #4b5563;
+      --text-dark-muted: #6b7280;
+      
+      --text-light-primary: #ffffff;
+      --text-light-secondary: #f3e8ff;
+      --text-light-muted: #c084fc;
+      
+      --primary-pink: #ec4899;
+      --primary-pink-dark: #be185d;
+      --primary-pink-light: #fce7f3;
+      
+      --primary-purple: #8b5cf6;
+      --primary-purple-dark: #6d28d9;
+      --primary-purple-light: #f3e8ff;
+      
+      --accent-emerald: #10b981;
+      --accent-emerald-light: #d1fae5;
+      
+      --accent-amber: #f59e0b;
+      --accent-amber-light: #fef3c7;
+      
+      --accent-sky: #0284c7;
+      --accent-sky-light: #e0f2fe;
+      
+      --accent-rose: #f43f5e;
+      --accent-rose-light: #ffe4e6;
+      
+      --border-light: rgba(236, 72, 153, 0.2);
+      --border-purple: rgba(139, 92, 246, 0.2);
+      
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0d0718;
+      font-family: var(--font-family);
+      color: var(--text-dark-primary);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Top Progress Bar */
+    #progress-container {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ec4899, #8b5cf6, #38bdf8);
+      transition: width 0.3s ease;
+    }
+
+    /* Top Bar */
+    header {
+      height: 52px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(22, 10, 38, 0.98);
+      backdrop-filter: blur(12px);
+      z-index: 90;
+      flex-shrink: 0;
+    }
+    .brand-pill {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.35);
+    }
+    .header-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e9d5ff;
+    }
+    .presenter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+    .presenter-chip.lucia { background: rgba(236, 72, 153, 0.2); border-color: rgba(236, 72, 153, 0.5); color: #f472b6; }
+    .presenter-chip.simon { background: rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.5); color: #c084fc; }
+    .presenter-chip.both { background: linear-gradient(90deg, rgba(236, 72, 153, 0.25), rgba(139, 92, 246, 0.25)); border-color: rgba(216, 180, 254, 0.4); color: #ffffff; }
+
+    /* Viewport & Slide Container */
+    #slide-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      background: #0d0718;
+    }
+
+    .slide {
+      position: absolute;
+      width: 96%;
+      max-width: 1360px;
+      height: 96%;
+      max-height: 740px;
+      border-radius: 20px;
+      padding: 30px 46px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.98) translateY(8px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1) translateY(0);
+      z-index: 10;
+    }
+
+    /* Light Theme Slides (Content) */
+    .slide.theme-light {
+      background: var(--bg-light);
+      border: 1.5px solid rgba(236, 72, 153, 0.25);
+      color: var(--text-dark-primary);
+    }
+    .slide.theme-light .slide-eyebrow {
+      background: var(--primary-pink-light);
+      color: var(--primary-pink-dark);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+    .slide.theme-light .slide-title {
+      color: var(--text-dark-primary);
+    }
+    .slide.theme-light .slide-subtitle {
+      color: var(--text-dark-secondary);
+    }
+
+    /* Dark Theme Slides (Cover & Wrap-up) */
+    .slide.theme-dark {
+      background: radial-gradient(circle at 80% 20%, #441456 0%, #260e3d 50%, #150825 100%);
+      border: 1.5px solid rgba(216, 180, 254, 0.3);
+      color: var(--text-light-primary);
+    }
+    .slide.theme-dark .slide-eyebrow {
+      background: rgba(236, 72, 153, 0.25);
+      color: #fbcfe8;
+      border: 1px solid rgba(236, 72, 153, 0.45);
+    }
+    .slide.theme-dark .slide-title {
+      color: #ffffff;
+    }
+    .slide.theme-dark .slide-subtitle {
+      color: var(--text-light-secondary);
+    }
+
+    /* Header Components inside Slides */
+    .slide-header {
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+    .slide-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      margin-bottom: 6px;
+    }
+    .slide-title {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.25;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .slide-subtitle {
+      font-size: 14.5px;
+      line-height: 1.5;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Slide Main Body */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    /* Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; min-height: 0; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; flex: 1; min-height: 0; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .grid-5 strong, .grid-6 strong { font-size: 14.5px; }
+    .grid-5 > div, .grid-6 > div { display: flex; flex-direction: column; justify-content: center; }
+
+    /* Cards */
+    .card-l {
+      background: var(--surface-white);
+      border: 1.5px solid rgba(236, 72, 153, 0.18);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      position: relative;
+    }
+    .card-l.highlight {
+      border-color: rgba(236, 72, 153, 0.45);
+      background: linear-gradient(180deg, #ffffff 0%, #fff9fc 100%);
+      box-shadow: 0 6px 22px rgba(236, 72, 153, 0.09);
+    }
+    .card-l.accent-purple {
+      border-color: rgba(139, 92, 246, 0.35);
+      background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+    }
+    .card-l.accent-emerald {
+      border-color: rgba(16, 185, 129, 0.35);
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+    }
+    .card-l.accent-amber {
+      border-color: rgba(245, 158, 11, 0.35);
+      background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
+    }
+    .card-l.accent-rose {
+      border-color: rgba(244, 63, 94, 0.35);
+      background: linear-gradient(180deg, #ffffff 0%, #fff1f2 100%);
+    }
+
+    .card-l-title {
+      font-size: 16px;
+      font-weight: 750;
+      color: var(--text-dark-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-l-subtitle {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--primary-pink-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .card-l-body {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text-dark-secondary);
+      flex: 1;
+    }
+
+    /* Bullet Lists */
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .bullet-list li {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 7px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: #374151;
+    }
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 5px;
+      color: var(--primary-pink);
+      font-weight: 900;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .bullet-list.purple li::before { color: var(--primary-purple); }
+    .bullet-list.emerald li::before { color: var(--accent-emerald); }
+
+    /* Bottom Banners */
+    .bottom-banner {
+      background: var(--surface-white);
+      border: 1.5px solid rgba(236, 72, 153, 0.25);
+      border-radius: 12px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.05);
+      flex-shrink: 0;
+    }
+    .bottom-banner-text {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--text-dark-primary);
+    }
+    .bottom-banner-tag {
+      background: var(--primary-pink-light);
+      color: var(--primary-pink-dark);
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 11px;
+      white-space: nowrap;
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      flex-shrink: 0;
+    }
+
+    /* Slide Footer Bar */
+    .slide-footer-bar {
+      padding-top: 8px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-dark-muted);
+      flex-shrink: 0;
+    }
+    .slide.theme-dark .slide-footer-bar {
+      border-top-color: rgba(255,255,255,0.12);
+      color: var(--text-light-muted);
+    }
+
+    /* Slide 3: Stable-Height Interactive Option Card */
+    .option-card-stable {
+      background: var(--surface-white);
+      border: 1.5px solid rgba(236, 72, 153, 0.22);
+      border-radius: 14px;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+    }
+    .option-card-stable:hover {
+      border-color: var(--primary-pink);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.14);
+    }
+    .option-card-stable.selected {
+      border-color: var(--primary-pink-dark);
+      background: #fff5f9;
+      box-shadow: 0 0 0 1.5px var(--primary-pink);
+    }
+    .option-title-text {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: var(--text-dark-primary);
+      margin-bottom: 6px;
+    }
+    .option-desc-text {
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: #4b5563;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    .option-badge {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 8px rgba(139, 92, 246, 0.35);
+    }
+    .consequence-slot {
+      background: #faf5f8;
+      border: 1px dashed rgba(236, 72, 153, 0.35);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: #9d174d;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      transition: all 0.25s ease;
+    }
+    .consequence-slot .prompt-hint {
+      color: var(--primary-pink-dark);
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .consequence-slot .consequence-actual {
+      display: none;
+    }
+    .option-card-stable.selected .consequence-slot {
+      background: #fee2e2;
+      border-color: #f87171;
+      border-style: solid;
+    }
+    .option-card-stable.selected .consequence-slot .prompt-hint {
+      display: none;
+    }
+    .option-card-stable.selected .consequence-slot .consequence-actual {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    /* App Footer Bar */
+    footer {
+      height: 52px;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(22, 10, 38, 0.98);
+      z-index: 90;
+      flex-shrink: 0;
+    }
+    .controls-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
+      border: none;
+      color: white;
+      box-shadow: 0 2px 10px rgba(236, 72, 153, 0.4);
+    }
+    .btn-primary:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    .counter {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #c084fc;
+      min-width: 65px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Speaker Notes Drawer */
+    #notes-panel {
+      position: fixed;
+      bottom: 56px;
+      right: 24px;
+      width: 440px;
+      max-height: 290px;
+      background: #1c0e33;
+      border: 1.5px solid rgba(216, 180, 254, 0.35);
+      border-radius: 14px;
+      padding: 16px 22px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(16px);
+      z-index: 100;
+      display: none;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #f3e8ff;
+    }
+    #notes-panel.open { display: block; animation: slideUp 0.2s ease; }
+    #notes-panel h4 {
+      color: #f472b6;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    /* Overview Modal */
+    #overview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 5, 24, 0.97);
+      backdrop-filter: blur(16px);
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      padding: 24px 36px;
+      overflow-y: auto;
+    }
+    #overview-modal.open { display: flex; }
+    .overview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .thumb-card {
+      background: #25123e;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .thumb-card:hover, .thumb-card.active {
+      border-color: var(--primary-pink);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
+    }
+    .thumb-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: #f472b6;
+    }
+    .thumb-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.35;
+    }
+    .thumb-presenter {
+      font-size: 11px;
+      color: #c084fc;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <span class="brand-pill">HKBU CHTL</span>
+      <span class="header-title">RISE Scenario Competition 2026 · CCL Workshop</span>
+    </div>
+    <div class="header-right">
+      <div id="presenter-tag" class="presenter-chip both">Lucia & Simon</div>
+    </div>
+  </header>
+
+  <!-- Main Slide Viewport -->
+  <main id="slide-viewport">
+
+    <!-- Slide 1: Cover (Completely Filled Widescreen) -->
+    <section class="slide theme-light active" data-presenter="Lucia & Simon" data-presenter-class="both" style="background: linear-gradient(135deg, #fbdcec 0%, #f0d9f8 45%, #d9ccf8 100%);">
+      <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 44px; align-items: center; flex: 1; min-height: 0;">
+        <!-- Left Column: Title & Presenters -->
+        <div style="display: flex; flex-direction: column;">
+          <div><span class="slide-eyebrow" style="background: rgba(255,255,255,0.6); color: var(--primary-purple-dark); border: 1px solid rgba(139,92,246,0.25);">HKBU CHTL · RISE SCENARIO COMPETITION 2026 · CCL WORKSHOP</span></div>
+          <div class="slide-title" style="display: block; font-size: 60px; font-weight: 900; line-height: 1.08; margin-top: 22px; background: linear-gradient(90deg, #be185d 0%, #7c3aed 55%, #4f46e5 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;">From Idea to Video</div>
+          <div class="slide-subtitle" style="font-size: 21px; color: #544a63; font-weight: 600; margin-top: 10px;">Build your own branching scenario with AI</div>
+
+          <!-- Presenter Chips -->
+          <div style="display: flex; gap: 14px; margin-top: 28px;">
+            <div style="background: rgba(255,255,255,0.65); border: 1.5px solid rgba(236, 72, 153, 0.35); border-radius: 9999px; padding: 8px 18px 8px 9px; display: flex; align-items: center; gap: 10px;">
+              <span style="background: var(--primary-pink); color: white; font-weight: 900; font-size: 12px; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">LL</span>
+              <strong style="color: var(--text-dark-primary); font-size: 15px;">Lucia Luo</strong>
+              <span style="color: var(--text-dark-muted); font-size: 11px; font-weight: 600;">Course Lead · SBL Pedagogy</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.65); border: 1.5px solid rgba(139, 92, 246, 0.35); border-radius: 9999px; padding: 8px 18px 8px 9px; display: flex; align-items: center; gap: 10px;">
+              <span style="background: var(--primary-purple); color: white; font-weight: 900; font-size: 12px; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">SW</span>
+              <strong style="color: var(--text-dark-primary); font-size: 15px;">Simon Wang</strong>
+              <span style="color: var(--text-dark-muted); font-size: 11px; font-weight: 600;">Technical Lead · Studio Pipeline</span>
+            </div>
+          </div>
+
+          <!-- Initiative -->
+          <div style="margin-top: 32px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dark-muted); font-weight: 800; margin-bottom: 6px;">Part of</div>
+            <div style="font-size: 15.5px; font-weight: 700; color: var(--text-dark-primary);">Resilience & Integrity through Scenario-based Engagement (RISE)</div>
+          </div>
+        </div>
+
+        <!-- Right Column: Illustration + Follow-Along QR -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 22px;">
+          <img src="rise_cover_illo.png" alt="Team building a branching scenario together" style="width: 330px; max-width: 100%; display: block;">
+          <div style="background: #ffffff; border: 1.5px solid rgba(236, 72, 153, 0.25); border-radius: 18px; padding: 14px 24px 14px 14px; display: flex; align-items: center; gap: 18px; box-shadow: 0 12px 30px rgba(124, 58, 237, 0.16);">
+            <div style="background: white; padding: 6px; border-radius: 10px; width: 108px; height: 108px; flex-shrink: 0; border: 1px solid #f1e7ef;">
+                <img src="data:image/png;base64,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" alt="RISE Scenario Studio QR Code" style="width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 8px;">
+            </div>
+            <div>
+              <strong style="color: var(--text-dark-primary); font-size: 16px; display: block; margin-bottom: 3px;">Follow Along Live</strong>
+              <span style="font-size: 12px; color: var(--text-dark-secondary); line-height: 1.45; display: block;">Scan with your phone to open the slides & studio platform.</span>
+              <span style="display: inline-block; background: var(--accent-amber-light); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-top: 7px;">pw: smartlucia</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>WELCOME TO THE WORKING SESSION</span>
+        <span>Press Space or ➔ to move · O = overview · N = notes</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Welcome & Kickoff]</strong><br>
+        • Welcome everyone to the RISE Scenario Competition CCL workshop!<br>
+        • Lucia and Simon will guide you through designing realistic scenarios, decoding the rubrics, and building your plan live today.
+      </div>
+    </section>
+
+    <!-- Slide 2: The Deal for the Next 90 Minutes -->
+    <section class="slide theme-light" data-presenter="Lucia & Simon" data-presenter-class="both">
+      <div class="slide-header">
+        <span class="slide-eyebrow">THE DEAL FOR THE NEXT 90 MINUTES</span>
+        <div class="slide-title">You'll leave with four things</div>
+        <div class="slide-subtitle">A high-intensity, practical session where every student builds a tangible deliverable.</div>
+      </div>
+
+      <div class="slide-body">
+        <!-- 4 Outcome Cards -->
+        <div class="grid-4" style="flex: 1;">
+          <div class="card-l highlight">
+            <div class="card-l-title">📝 A complete plan</div>
+            <ul class="bullet-list">
+              <li>Two-level scenario decision tree</li>
+              <li>Setting, characters, and dilemma</li>
+              <li>Built live in the room today</li>
+            </ul>
+          </div>
+          <div class="card-l accent-emerald">
+            <div class="card-l-title">✅ A checked plan</div>
+            <ul class="bullet-list emerald">
+              <li>Checked against official rubric</li>
+              <li>Passes all 14 hard rules</li>
+              <li>Eliminates disqualification risk</li>
+            </ul>
+          </div>
+          <div class="card-l accent-purple">
+            <div class="card-l-title">🎓 CCL credits</div>
+            <ul class="bullet-list purple">
+              <li>Complete the checkpoint screen</li>
+              <li>Enter your student ID on the spot</li>
+              <li>Zero follow-up homework</li>
+            </ul>
+          </div>
+          <div class="card-l accent-amber">
+            <div class="card-l-title">🎬 Video support offer</div>
+            <ul class="bullet-list">
+              <li>Help turning plan into MP4 clips</li>
+              <li>Automated 2D pipeline access</li>
+              <li>Direct collaboration with Lucia</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Running Order Table -->
+        <div class="card-l" style="padding: 14px 20px; flex: 1.2; justify-content: space-evenly;">
+          <div class="card-l-subtitle" style="font-size: 11.5px;">Workshop Schedule & Running Order</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #faf5f8; border-radius: 8px; font-size: 13.5px;">
+              <span><strong>1. What scenario-based learning is</strong> (The 11:30 PM hook & 3C model)</span>
+              <span class="presenter-chip lucia" style="font-size: 11px;">Lucia · ~10 min</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #faf5f8; border-radius: 8px; font-size: 13.5px;">
+              <span><strong>2. The RISE competition</strong> (Framework, 5 domains, rubrics, entry skeleton)</span>
+              <span class="presenter-chip simon" style="font-size: 11px;">Simon · ~15 min</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #faf5f8; border-radius: 8px; font-size: 13.5px;">
+              <span><strong>3. How AI can support the process</strong> (Disjointed tools vs integrated studio)</span>
+              <span class="presenter-chip both" style="font-size: 11px;">Both · ~15 min</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #faf5f8; border-radius: 8px; font-size: 13.5px;">
+              <span><strong>4. Live platform demo</strong> (From campus idea to interactive branching tree)</span>
+              <span class="presenter-chip lucia" style="font-size: 11px;">Lucia · ~10 min</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fdf2f8; border: 1.5px solid rgba(236,72,153,0.35); border-radius: 8px; font-size: 13.5px;">
+              <span><strong>5. Hands-on: build your plan</strong> (Interactive studio + CCL Checkpoint)</span>
+              <span class="presenter-chip" style="background: var(--primary-pink); color: white; font-size: 11px;">You · ~40 min</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Banner -->
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>Expectation:</strong> This is not an abstract lecture — it is a working sprint. You will finish with an actual artifact today.
+          </div>
+          <span class="bottom-banner-tag">Working Session</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>PART 0 · ROADMAP</span>
+        <span>Goal: A completed, checked scenario plan in 90 minutes</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Roadmap Note]</strong><br>
+        Flag early that the checkpoint needs a COMPLETED plan, not a perfect one. Questions are welcome at any point.
+      </div>
+    </section>
+
+    <!-- Slide 3: Interactive Hook (Refined: Fixed Stable Card Height, Larger Fonts, Zero Layout Jump) -->
+    <section class="slide theme-light" data-presenter="Lucia" data-presenter-class="lucia">
+      <div class="slide-body" style="gap: 10px;">
+        <!-- Top: Scenario Text (Left) + Night Chat Illustration (Right) -->
+        <div style="display: flex; align-items: center; gap: 22px; flex-shrink: 0;">
+          <div style="flex: 1.3; min-width: 0;">
+            <span class="slide-eyebrow">PART ONE · IMAGINE THIS</span>
+            <div class="slide-title" style="font-size: 38px;">🌙 It's 11:30 p.m.</div>
+            <div style="font-size: 15.5px; color: var(--text-dark-secondary); line-height: 1.5; margin-top: 6px; font-weight: 500;">
+              The night before your group project is due. Your group member suddenly messages you:
+            </div>
+            <div style="margin-top: 12px; background: #fdf0f6; border-left: 5px solid var(--primary-pink); border-radius: 10px; padding: 12px 18px;">
+              <div style="font-size: 16px; font-style: italic; font-weight: 600; color: var(--text-dark-primary);">💬 "Sorry… I haven't finished my part yet."</div>
+              <div style="font-size: 11px; font-weight: 800; color: var(--primary-pink-dark); margin-top: 5px; text-transform: uppercase; letter-spacing: 0.05em;">WhatsApp Group Chat · 11:30 PM</div>
+            </div>
+          </div>
+          <div style="flex-shrink: 0; display: flex; align-items: center; gap: 12px; background: #ffffff; border: 1.5px solid rgba(236, 72, 153, 0.25); border-radius: 14px; padding: 10px 16px 10px 12px; box-shadow: 0 6px 18px rgba(139, 92, 246, 0.12);">
+            <div id="slide3-qr" style="width: 96px; height: 96px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #fff;"></div>
+            <div style="font-size: 12.5px; line-height: 1.45; color: var(--text-dark-secondary); font-weight: 600;">
+              📱 <strong style="color: var(--primary-pink-dark);">Scan to vote</strong><br>
+              A · B · C · D
+              <span style="font-size: 10.5px; color: var(--text-dark-muted); display: block;">no login · live results</span>
+            </div>
+          </div>
+          <div style="flex-shrink: 0;">
+            <svg width="270" height="180" viewBox="0 0 330 220" role="img" aria-label="Late night WhatsApp message">
+              <rect x="0" y="0" width="330" height="220" rx="18" fill="#2b1c52" />
+              <circle cx="42" cy="40" r="2.2" fill="#c4b5fd" />
+              <circle cx="74" cy="92" r="1.6" fill="#a78bfa" />
+              <circle cx="58" cy="172" r="1.8" fill="#c4b5fd" />
+              <circle cx="150" cy="28" r="1.5" fill="#a78bfa" />
+              <circle cx="252" cy="150" r="2" fill="#c4b5fd" />
+              <circle cx="288" cy="184" r="1.5" fill="#a78bfa" />
+              <circle cx="276" cy="46" r="24" fill="#f6e7a3" />
+              <circle cx="264" cy="38" r="20" fill="#2b1c52" />
+              <rect x="120" y="40" width="90" height="152" rx="16" fill="#150a2c" stroke="#6d5aa8" stroke-width="2.5" />
+              <rect x="128" y="48" width="74" height="136" rx="9" fill="#ffffff" />
+              <rect x="138" y="64" width="54" height="36" rx="9" fill="#f472a6" />
+              <rect x="146" y="74" width="38" height="5" rx="2.5" fill="#ffffff" opacity="0.92" />
+              <rect x="146" y="84" width="26" height="5" rx="2.5" fill="#ffffff" opacity="0.92" />
+              <circle cx="152" cy="134" r="5.5" fill="#8b7fd6" />
+              <circle cx="168" cy="134" r="5.5" fill="#8b7fd6" />
+              <circle cx="184" cy="134" r="5.5" fill="#8b7fd6" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Deadline Headline -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-shrink: 0;">
+          <div style="font-size: 28px; font-weight: 800; line-height: 1.2; color: var(--text-dark-primary);">⏰ The deadline is tomorrow 9:00 a.m.</div>
+          <div style="background: var(--primary-pink-light); color: var(--primary-pink-dark); font-size: 12px; font-weight: 800; padding: 7px 14px; border-radius: 9999px; white-space: nowrap;">
+            ⏰ 9.5 Hours Remaining (Due: 9:00 AM) · Course Weight: 40%
+          </div>
+        </div>
+        <div style="font-size: 15px; font-weight: 800; color: var(--text-dark-primary); flex-shrink: 0;">🤔 What would you do?</div>
+
+        <!-- 4 Option Cards in 2x2 Grid (Fixed Stable Height, Larger Fonts) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1;">
+          <!-- Option A -->
+          <div class="option-card-stable" onclick="window.toggleOption(this)">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="option-badge">A</span>
+              <div class="option-title-text" style="margin-bottom: 0;">✍️ Do his part yourself overnight</div>
+            </div>
+            <div class="consequence-slot">
+              <span class="prompt-hint">👆 Click to inspect realistic consequence</span>
+              <div class="consequence-actual">
+                💥 <strong>Consequence:</strong> You end up physically and mentally exhausted for the morning presentation; resentment festers; your teammate gets a free pass and learns nothing.
+              </div>
+            </div>
+          </div>
+
+          <!-- Option B -->
+          <div class="option-card-stable" onclick="window.toggleOption(this)">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="option-badge">B</span>
+              <div class="option-title-text" style="margin-bottom: 0;">💬 Bombard them with urgent DMs to finish</div>
+            </div>
+            <div class="consequence-slot">
+              <span class="prompt-hint">👆 Click to inspect realistic consequence</span>
+              <div class="consequence-actual">
+                💥 <strong>Consequence:</strong> Your messages sit on "Unread" at 1:30 AM; panic escalates; morning arrives and the submission is left completely empty-handed.
+              </div>
+            </div>
+          </div>
+
+          <!-- Option C -->
+          <div class="option-card-stable" onclick="window.toggleOption(this)">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="option-badge">C</span>
+              <div class="option-title-text" style="margin-bottom: 0;">👥 Redistribute remaining work among groupmates</div>
+            </div>
+            <div class="consequence-slot">
+              <span class="prompt-hint">👆 Click to inspect realistic consequence</span>
+              <div class="consequence-actual">
+                💥 <strong>Consequence:</strong> Other teammates push back angrily against midnight emergency tasks; trust fractures; bitter arguments delay actual writing.
+              </div>
+            </div>
+          </div>
+
+          <!-- Option D -->
+          <div class="option-card-stable" onclick="window.toggleOption(this)">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="option-badge">D</span>
+              <div class="option-title-text" style="margin-bottom: 0;">📤 Submit whatever you have as-is</div>
+            </div>
+            <div class="consequence-slot">
+              <span class="prompt-hint">👆 Click to inspect realistic consequence</span>
+              <div class="consequence-actual">
+                💥 <strong>Consequence:</strong> The report lacks core analysis; whole group's GPA drops 15%; instructor notes poor team communication.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>1 · SCENARIO-BASED LEARNING</span>
+        <span>Interactive Hook: Real dilemmas involve difficult trade-offs</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Lucia's Hook Note]</strong><br>
+        Ask the room which option they would pick and why. Point out that each option leads to a different branch.
+      </div>
+    </section>
+
+    <!-- Slide 4: Definition & Flow of SBL -->
+    <section class="slide theme-light" data-presenter="Lucia" data-presenter-class="lucia">
+      <div class="slide-header">
+        <span class="slide-eyebrow">THE DEFINITION & FLOW</span>
+        <div class="slide-title">What is Scenario-Based Learning?</div>
+        <div class="slide-subtitle">Learning happens inside a realistic situation — not only inside an explanation.</div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2" style="flex: 1;">
+          <div class="card-l highlight">
+            <div class="card-l-subtitle">Core Elements</div>
+            <div class="card-l-title">Seven Key SBL Ingredients</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px 0;">
+              <span style="background: #fce7f3; color: #be185d; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">🎬 Realistic Scenarios</span>
+              <span style="background: #ede9fe; color: #6d28d9; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">👤 Characters</span>
+              <span style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">🏫 Context</span>
+              <span style="background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">⏱️ Pressure</span>
+              <span style="background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">⚖️ Choices</span>
+              <span style="background: #d1fae5; color: #047857; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">🌊 Consequences</span>
+              <span style="background: #f3e8ff; color: #7c3aed; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">🪞 Reflection</span>
+            </div>
+            <ul class="bullet-list">
+              <li>Combines <strong>situated learning theory</strong> with authentic storytelling.</li>
+              <li>Puts learners in realistic roles with proper emotional stakes.</li>
+            </ul>
+          </div>
+
+          <div class="card-l accent-purple">
+            <div class="card-l-subtitle">Pedagogical Value</div>
+            <div class="card-l-title">Why Branching Specifically?</div>
+            <ul class="bullet-list purple">
+              <li><strong>Every decision has consequences:</strong> Learners see immediate ripple effects.</li>
+              <li><strong>Every choice reveals new information:</strong> Drives active exploration.</li>
+              <li><strong>Mistakes are safe:</strong> Allows failing safely without real damage.</li>
+              <li><strong>Unique paths:</strong> Comparison between paths is where social reflection occurs.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 4-Step Visual Flow Diagram -->
+        <div class="card-l" style="padding: 12px 18px; flex: 0.8; justify-content: center;">
+          <div class="card-l-subtitle" style="margin-bottom: 6px;">The Scenario-Based Learning Cycle</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="flex: 1; background: #faf5f8; border: 1.5px solid var(--primary-pink); border-radius: 10px; padding: 10px; text-align: center;">
+              <div style="font-size: 20px;">🎬</div>
+              <strong style="font-size: 13px; color: var(--primary-pink-dark);">1. Realistic Scenario</strong>
+              <div style="font-size: 11px; color: var(--text-dark-muted);">Trigger event with tension</div>
+            </div>
+            <div style="color: var(--primary-pink); font-size: 20px; font-weight: 900;">➔</div>
+            <div style="flex: 1; background: #faf5f8; border: 1.5px solid var(--primary-purple); border-radius: 10px; padding: 10px; text-align: center;">
+              <div style="font-size: 20px;">🤔</div>
+              <strong style="font-size: 13px; color: var(--primary-purple-dark);">2. Learner Decision</strong>
+              <div style="font-size: 11px; color: var(--text-dark-muted);">3–4 defensible choices</div>
+            </div>
+            <div style="color: var(--primary-purple); font-size: 20px; font-weight: 900;">➔</div>
+            <div style="flex: 1; background: #faf5f8; border: 1.5px solid var(--accent-emerald); border-radius: 10px; padding: 10px; text-align: center;">
+              <div style="font-size: 20px;">🌍</div>
+              <strong style="font-size: 13px; color: var(--accent-emerald);">3. Consequence</strong>
+              <div style="font-size: 11px; color: var(--text-dark-muted);">World reacts dynamically</div>
+            </div>
+            <div style="color: var(--accent-emerald); font-size: 20px; font-weight: 900;">➔</div>
+            <div style="flex: 1; background: #faf5f8; border: 1.5px solid var(--accent-amber); border-radius: 10px; padding: 10px; text-align: center;">
+              <div style="font-size: 20px;">🪞</div>
+              <strong style="font-size: 13px; color: var(--accent-amber);">4. Debrief & Reflect</strong>
+              <div style="font-size: 11px; color: var(--text-dark-muted);">Framework mapped lesson</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Banner -->
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>The Core Takeaway:</strong> Learning comes from experiencing the consequence of your choice, not from being told an abstract rule. <strong>The debrief IS the teaching.</strong>
+          </div>
+          <span class="bottom-banner-tag">Core Rule</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>1 · SCENARIO-BASED LEARNING</span>
+        <span>Definition & flow: Experience-driven education</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Lucia's SBL Definition]</strong><br>
+        The single most useful sentence for students: the learning comes from seeing the consequence of your choice, not from being told the answer.
+      </div>
+    </section>
+
+    <!-- Slide 5: The 3C Engine & 16-Path Matrix -->
+    <section class="slide theme-light" data-presenter="Lucia" data-presenter-class="lucia">
+      <div class="slide-header">
+        <span class="slide-eyebrow">INSTRUCTIONAL DESIGN</span>
+        <div class="slide-title">Crafting Decision Points: Good, Better & Best</div>
+        <div class="slide-subtitle">The 3C Model: Challenge → Choice → Consequence. Four choices × four choices = up to 16 paths.</div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-4" style="flex: 1;">
+          <div class="card-l highlight">
+            <div class="card-l-subtitle">1. The Hook</div>
+            <div class="card-l-title">🎯 Challenge</div>
+            <div class="card-l-body">An authentic dilemma with uncertain outcomes. Rooted in student reality: integrity under pressure, academic stress, interpersonal friction.</div>
+          </div>
+          <div class="card-l accent-purple">
+            <div class="card-l-subtitle" style="color: var(--primary-purple-dark);">2. The Dilemma</div>
+            <div class="card-l-title">⚖️ Choice</div>
+            <div class="card-l-body">3 to 4 viable paths. No obvious "throwaway" answers. Each represents a believable reaction an actual university student might make.</div>
+          </div>
+          <div class="card-l accent-emerald">
+            <div class="card-l-subtitle" style="color: var(--accent-emerald);">3. The Ripple</div>
+            <div class="card-l-title">🌊 Consequence</div>
+            <div class="card-l-body">Immediate feedback or delayed impacts. Reveals how small choices early on cause large ripples downstream.</div>
+          </div>
+          <div class="card-l accent-amber">
+            <div class="card-l-subtitle" style="color: #b45309;">Design Rules</div>
+            <div class="card-l-title">💸 Optimal Choice & Cost</div>
+            <ul class="bullet-list">
+              <li>One choice per branch is the more optimal choice.</li>
+              <li>Even the optimal choice should still <strong>cost something</strong>.</li>
+              <li>Keep all option descriptions approximately equal in length.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 16-Path Matrix Visual Card -->
+        <div class="card-l" style="padding: 12px 18px; flex: 1; justify-content: space-evenly;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-l-title" style="font-size: 14.5px;">🌳 Two-Level Branching Shape (16 Paths Converging into 3 Outcomes)</div>
+            <div style="display: flex; gap: 8px; font-size: 11px; font-weight: 700;">
+              <span style="background: #d1fae5; color: #047857; padding: 2px 8px; border-radius: 4px;">G: Growth</span>
+              <span style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 4px;">P: Partial</span>
+              <span style="background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 4px;">L: Learning (Miss)</span>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; margin: 4px 0;">
+            <div style="background: #10b981; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">G</div>
+            <div style="background: #10b981; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">G</div>
+            <div style="background: #f59e0b; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">P</div>
+            <div style="background: #f59e0b; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">P</div>
+            <div style="background: #10b981; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">G</div>
+            <div style="background: #f59e0b; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">P</div>
+            <div style="background: #f59e0b; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">P</div>
+            <div style="background: #ef4444; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">L</div>
+            <div style="background: #f59e0b; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">P</div>
+            <div style="background: #f59e0b; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">P</div>
+            <div style="background: #ef4444; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">L</div>
+            <div style="background: #ef4444; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">L</div>
+            <div style="background: #f59e0b; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">P</div>
+            <div style="background: #ef4444; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">L</div>
+            <div style="background: #ef4444; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">L</div>
+            <div style="background: #ef4444; color: white; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">L</div>
+          </div>
+          <div style="font-size: 12.5px; color: var(--text-dark-secondary);">
+            <strong>Design Tip:</strong> You don't have to write 16 totally different stories. Let paths converge, but carry the consequence state forward.
+          </div>
+        </div>
+
+        <!-- Bottom Banner -->
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>The Competition Rule in One Line:</strong> If one option is obviously right, the player learns nothing. Ambiguity creates the learning tension.
+          </div>
+          <span class="bottom-banner-tag">Gold Standard</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>1 · SCENARIO-BASED LEARNING</span>
+        <span>Branching shape: Plausible options beat extreme caricatures</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Lucia's Points]</strong><br>
+        Remind students that at least one negative competence code (−C) is required by the competition rules. The misses are the teaching moments.
+      </div>
+    </section>
+
+    <!-- Slide 6: RISE Competition: 5 Domains × 6 Competences -->
+    <section class="slide theme-light" data-presenter="Simon" data-presenter-class="simon">
+      <div class="slide-header">
+        <span class="slide-eyebrow">PART TWO · THE COMPETITION</span>
+        <div class="slide-title" style="justify-content: flex-start; gap: 12px;">RISE Framework: <span style="color: var(--primary-pink-dark); background: var(--primary-pink-light); padding: 2px 14px; border-radius: 10px;">5 Domains</span> × <span style="color: var(--primary-purple-dark); background: var(--primary-purple-light); padding: 2px 14px; border-radius: 10px;">6 Competences</span></div>
+        <div class="slide-subtitle" style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+          <span>Resilience and Integrity through Scenario-based Engagement (CHTL, HKBU).</span>
+          <a href="https://chtl-bu.hkbu.edu.hk/rise-sdc2026/competition.html#fw" target="_blank" rel="noopener" style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; background: #ffffff; border: 1.5px solid var(--primary-pink); color: var(--primary-pink-dark); font-weight: 800; font-size: 12.5px; padding: 6px 14px; border-radius: 9999px; text-decoration: none; box-shadow: 0 3px 10px rgba(236, 72, 153, 0.14);">
+            🔗 <span style="font-family: monospace;">chtl-bu.hkbu.edu.hk/rise-sdc2026/competition.html#fw</span> ↗
+          </a>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <!-- 5 Domains Grid -->
+        <div class="card-l highlight" style="padding: 14px 18px; flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="card-l-title" style="font-size: 18px;">🌐 The <span style="color: var(--primary-pink-dark); background: var(--primary-pink-light); padding: 2px 8px; border-radius: 8px;">5 Domains</span> of Life <span style="font-size: 12.5px; color: var(--text-dark-muted); font-weight: 600;">(Select ≤ 2 as Most Relevant)</span></div>
+            <span style="font-size: 11px; font-weight: 700; color: var(--primary-pink-dark);">Quality over quantity</span>
+          </div>
+          <div class="grid-5" style="font-size: 13px; gap: 8px; flex: 1;">
+            <div style="background: #faf5f8; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--primary-pink-dark);">D1 Academic / Prof</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Study, research, career</div>
+            </div>
+            <div style="background: #faf5f8; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--primary-purple-dark);">D2 Civic / Political</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Community, citizenship</div>
+            </div>
+            <div style="background: #faf5f8; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--accent-emerald);">D3 Environmental</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Natural world, ecology</div>
+            </div>
+            <div style="background: #faf5f8; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--accent-amber);">D4 Personal</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Self, health, leisure, faith</div>
+            </div>
+            <div style="background: #faf5f8; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--accent-sky);">D5 Relational / Social</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Family, friends, peers</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6 Competences Grid -->
+        <div class="card-l accent-purple" style="padding: 14px 18px; flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="card-l-title" style="font-size: 18px;">🧠 The <span style="color: var(--primary-purple-dark); background: var(--primary-purple-light); padding: 2px 8px; border-radius: 8px;">6 Competences</span> <span style="font-size: 12.5px; color: var(--text-dark-muted); font-weight: 600;">(Select ≤ 4 as Most Relevant)</span></div>
+            <span style="font-size: 11px; font-weight: 700; color: var(--primary-purple-dark);">Must be visible in scenes</span>
+          </div>
+          <div class="grid-6" style="font-size: 13px; gap: 8px; flex: 1;">
+            <div style="background: white; border: 1px solid var(--border-purple); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--accent-rose);">C1 Ethical Judgement</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Choose values when costly</div>
+            </div>
+            <div style="background: white; border: 1px solid var(--border-purple); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--primary-pink-dark);">C2 Interpersonal</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Keep relations under strain</div>
+            </div>
+            <div style="background: white; border: 1px solid var(--border-purple); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--primary-purple-dark);">C3 Self-Awareness</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Motives, blind spots</div>
+            </div>
+            <div style="background: white; border: 1px solid var(--border-purple); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--accent-emerald);">C4 Self-Care</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Manage stress, well-being</div>
+            </div>
+            <div style="background: white; border: 1px solid var(--border-purple); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--accent-amber);">C5 Self-Determination</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Act, don't just react</div>
+            </div>
+            <div style="background: white; border: 1px solid var(--border-purple); border-radius: 8px; padding: 10px;">
+              <strong style="color: var(--accent-sky);">C6 Self-Regulation</strong>
+              <div style="color: var(--text-dark-muted); margin-top: 2px;">Thoughts & integrity</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Worked Example Banner -->
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>Worked Example:</strong> A group-work story about plagiarized code is <strong>D1 (Academic) + D5 (Relational)</strong>.<br>
+            <em>Common mistake:</em> Claiming 4+ domains to look ambitious. Two well-evidenced domains easily beat five decorative tags.
+          </div>
+          <span class="bottom-banner-tag">Scoring Secret</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>2 · THE COMPETITION</span>
+        <span>Official rules & framework: <a href="https://chtl-bu.hkbu.edu.hk/rise-sdc2026/competition.html#fw" target="_blank" rel="noopener" style="color: inherit; text-decoration: underline;">chtl-bu.hkbu.edu.hk/rise-sdc2026/competition.html#fw</a></span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Simon's Framework Advice]</strong><br>
+        Explain that you don't pick competences because they sound impressive—you pick them because your video scenes prove them.
+      </div>
+    </section>
+
+    <!-- Slide 7: Entry Skeleton & The Hard Rules -->
+    <section class="slide theme-light" data-presenter="Simon" data-presenter-class="simon">
+      <div class="slide-header">
+        <span class="slide-eyebrow">SUBMISSION SKELETON</span>
+        <div class="slide-title">Every Compliant Entry Has This Structure</div>
+        <div class="slide-subtitle">Fail any of these hard checks and your entry is rejected as incomplete.</div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2" style="flex: 1;">
+          <div class="card-l highlight">
+            <div class="card-l-title">🎬 Two Decisions & Branching Structure</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px; flex: 1; justify-content: space-evenly;">
+              <div style="background: #faf5f8; border-left: 3px solid var(--primary-pink); padding: 8px 12px; border-radius: 6px; font-size: 13.5px;">
+                <strong>1. Intro Clip (&lt;1 min):</strong> Sets scene, character, and central tension.
+              </div>
+              <div style="text-align: center; color: var(--primary-pink); font-size: 14px; font-weight: 900;">↓</div>
+              <div style="background: #faf5f8; border-left: 3px solid var(--primary-purple); padding: 8px 12px; border-radius: 6px; font-size: 13.5px;">
+                <strong>2. Decision 1 (3–4 choices):</strong> Genuine dilemma with trade-offs.
+              </div>
+              <div style="text-align: center; color: var(--primary-purple); font-size: 14px; font-weight: 900;">↓</div>
+              <div style="background: #faf5f8; border-left: 3px solid var(--accent-emerald); padding: 8px 12px; border-radius: 6px; font-size: 13.5px;">
+                <strong>3. Branch Clips & Decision 2 (3–4 choices):</strong> Deeper consequential crisis.
+              </div>
+              <div style="text-align: center; color: var(--accent-emerald); font-size: 14px; font-weight: 900;">↓</div>
+              <div style="background: #faf5f8; border-left: 3px solid var(--accent-amber); padding: 8px 12px; border-radius: 6px; font-size: 13.5px;">
+                <strong>4. Terminal Outcomes & Debriefs:</strong> Every ending mapped to framework.
+              </div>
+            </div>
+          </div>
+
+          <div class="card-l accent-amber">
+            <div class="card-l-title">📋 Checklist That Decides Pass / Fail</div>
+            <ul class="bullet-list" style="margin-top: 8px; flex: 1; justify-content: space-evenly; display: flex; flex-direction: column;">
+              <li><strong>✓ Two decision levels:</strong> Exactly two; never binary (yes/no).</li>
+              <li><strong>✓ English only:</strong> All script, debriefs, and video subtitles.</li>
+              <li><strong>✓ Short clips rule:</strong> Each clip under 1 min in MP4 format (PPT animation export allowed).</li>
+              <li><strong>✓ GenAI declaration:</strong> Mandatory disclosure (no penalty for using AI, but undeclared breaks rules).</li>
+              <li><strong>✓ Open downloadable folder:</strong> Link accessible without login.</li>
+              <li><strong>✓ Team limit:</strong> ≤ 4 students (individual entries permitted).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>The Video Bottleneck:</strong> Roughly 8–10 short clips are required in total. This is why 70% of student teams stall or drop out — and exactly why we built the automated pipeline.
+          </div>
+          <span class="bottom-banner-tag">Critical Warning</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>2 · THE COMPETITION</span>
+        <span>Entry Structure: Strict compliance boundary</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Simon's Compliance Warning]</strong><br>
+        Stress that PPT animations exported to MP4 are completely compliant! You don't need a film degree.
+      </div>
+    </section>
+
+    <!-- Slide 8: Rubric Decoded -->
+    <section class="slide theme-light" data-presenter="Simon" data-presenter-class="simon">
+      <div class="slide-header">
+        <span class="slide-eyebrow">HOW THE JUDGES SCORE YOU</span>
+        <div class="slide-title">The Rubric by Weight: Content is 60%</div>
+        <div class="slide-subtitle">Design of choices (20%) + Explanation debrief (20%) = 40% of your total score.</div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2" style="flex: 1;">
+          <div class="card-l highlight">
+            <div class="card-l-subtitle">60% Mark</div>
+            <div class="card-l-title">🏆 Content & Pedagogy</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                <span>• Design of Choices:</span><strong style="color: var(--primary-pink-dark);">20%</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                <span>• Explanation & Debrief:</span><strong style="color: var(--primary-pink-dark);">20%</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                <span>• Scenario Organisation:</span><strong>10%</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                <span>• Language & Clarity:</span><strong>10%</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-l accent-purple">
+            <div class="card-l-subtitle">40% Remainder</div>
+            <div class="card-l-title">🎨 Overall & Graphics</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                <span>• Understanding Framework:</span><strong>10%</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                <span>• Topic Relevancy:</span><strong>10%</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
+                <span>• Graphic & Video Finish:</span><strong style="color: var(--primary-purple-dark);">20%</strong>
+              </div>
+            </div>
+            <div style="font-size: 12.5px; color: var(--text-dark-muted); margin-top: 10px;">
+              * Clean 2D animation with clear voiceover guarantees a "Good" (3/4) visual score.
+            </div>
+          </div>
+
+        </div>
+
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>The Winning Strategy:</strong> Write and verify your outcome debriefs BEFORE rendering a single video clip. A debrief is fast to write, counts for 20% of your total mark, and forces your story to actually teach something.
+          </div>
+          <span class="bottom-banner-tag">Strategic Priority</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>2 · THE COMPETITION</span>
+        <span>Grading Rubric: Content & Logic (80%) > Video Polish (20%)</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Simon's Rubric Note]</strong><br>
+        Ask the audience: "Where do most students spend their weekend?" Usually in video editors. But 80% of marks come from script, choices, and debriefs!
+      </div>
+    </section>
+
+    <!-- Slide 9: Prizes, Dates & Eligibility -->
+    <section class="slide theme-light" data-presenter="Simon" data-presenter-class="simon">
+      <div class="slide-header">
+        <span class="slide-eyebrow">WHAT'S AT STAKE</span>
+        <div class="slide-title">Prizes, dates and who can enter</div>
+      </div>
+
+      <div class="slide-body">
+        <!-- Podium Row -->
+        <div style="display: grid; grid-template-columns: 1fr 1.12fr 1fr; gap: 18px; align-items: center;">
+          <div style="background: #ffffff; border: 1.5px solid rgba(100, 116, 139, 0.22); border-top: 5px solid #94a3b8; border-radius: 14px; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06); padding: 16px 18px; text-align: center;">
+            <div style="font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b;">1st Runner-up</div>
+            <div style="font-size: 34px; font-weight: 900; color: #475569; margin-top: 2px;">HK$4,000</div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid rgba(245, 158, 11, 0.4); border-top: 5px solid #f59e0b; border-radius: 14px; box-shadow: 0 10px 26px rgba(245, 158, 11, 0.14); padding: 22px 18px; text-align: center;">
+            <div style="font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b;">🏆 Champion</div>
+            <div style="font-size: 40px; font-weight: 900; color: #b45309; margin-top: 2px;">HK$6,000</div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid rgba(217, 119, 6, 0.3); border-top: 5px solid #d97706; border-radius: 14px; box-shadow: 0 6px 20px rgba(217, 119, 6, 0.1); padding: 16px 18px; text-align: center;">
+            <div style="font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b;">2nd Runner-up</div>
+            <div style="font-size: 34px; font-weight: 900; color: #b45309; margin-top: 2px;">HK$3,000</div>
+          </div>
+        </div>
+
+        <!-- Merit & Deadline Row -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+          <div class="card-l" style="border: 1.5px solid rgba(245, 158, 11, 0.35); border-top: 5px solid #f59e0b; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.08);">
+            <div class="card-l-title" style="font-size: 17px;">🥇 Plus 10 merit awards × HK$1,000</div>
+            <div class="card-l-body">Cash + award certificate. Winners are invited to an award presentation ceremony, and may be invited to share their experience at the project-end symposium. For team entries, each prize is shared by the whole team.</div>
+          </div>
+          <div class="card-l" style="border: 1.5px solid rgba(236, 72, 153, 0.35); border-top: 5px solid var(--primary-pink); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.08);">
+            <div class="card-l-title" style="font-size: 17px;">⏰ Deadline — 30 Oct 2026, 12:00nn (GMT+8)</div>
+            <div class="card-l-body">Submission period: 01 Sep 2026 12:00nn → 30 Oct 2026 12:00nn. <strong style="color: var(--text-dark-primary);">English only.</strong> Individual entries welcome, or teams of up to 4 — only the last submission counts.</div>
+          </div>
+        </div>
+
+        <!-- Eligibility -->
+        <div style="font-size: 13.5px; line-height: 1.5; color: var(--text-dark-secondary);">
+          <strong style="color: var(--text-dark-primary);">Eligibility:</strong> all current students at higher-education institutions in Hong Kong, China, and their affiliated institutions in the Chinese Mainland — BNBU, CityUHK(DG), CUHK-Shenzhen, HKUST(GZ). So: yes, that includes you.
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>2 · THE COMPETITION</span>
+        <span>Prizes & logistics: hard deadline 30 Oct 2026, 12:00nn (GMT+8)</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Simon's Prizes Note]</strong><br>
+        Stress the logistics: English only, teams up to 4, and only the last submission counts — so submit drafts early. Winners are invited to the award presentation ceremony and the project-end symposium.
+      </div>
+    </section>
+
+    <!-- Slide 10: AI Dual Approaches -->
+    <section class="slide theme-light" data-presenter="Both" data-presenter-class="both">
+      <div class="slide-header">
+        <span class="slide-eyebrow">PART THREE · AI WORKFLOW</span>
+        <div class="slide-title">How AI Can Support the Process: Two Paths</div>
+        <div class="slide-subtitle">We have done both, and we will tell you honestly what each one costs you.</div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2" style="flex: 1;">
+          <div class="card-l accent-rose">
+            <div class="card-header-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span class="card-l-subtitle" style="color: #e11d48;">APPROACH 1 · THE DISJOINTED TOOLBOX</span>
+              <span class="presenter-chip lucia" style="font-size: 10px;">Lucia</span>
+            </div>
+            <div class="card-l-title">Use 4+ General Tools, One Step at a Time</div>
+            <ul class="bullet-list" style="margin-top: 8px;">
+              <li><strong>Step 1:</strong> Chat model for script (lacks branching state memory).</li>
+              <li><strong>Step 2:</strong> Midjourney / DALL-E for images (faces & styles drift).</li>
+              <li><strong>Step 3:</strong> MiniMax / TTS for voice (manual file chopping).</li>
+              <li><strong>Step 4:</strong> CapCut / Premiere (hours aligning 10 separate clips).</li>
+            </ul>
+            <div style="background: #fff1f2; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; color: #9f1239; margin-top: 10px;">
+              ⚠️ <em>High friction:</em> Changing Decision 1 forces manual re-export across 6 downstream tools.
+            </div>
+          </div>
+
+          <div class="card-l highlight">
+            <div class="card-header-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span class="card-l-subtitle">APPROACH 2 · INTEGRATED PLATFORM</span>
+              <span class="presenter-chip simon" style="font-size: 10px;">Simon</span>
+            </div>
+            <div class="card-l-title">APIs + Vibe Coding Studio</div>
+            <ul class="bullet-list purple" style="margin-top: 8px;">
+              <li><strong>Deterministic Style:</strong> Same voice timbre, visual identity across all clips.</li>
+              <li><strong>Interactive Mind Map:</strong> Branching tree auto-generates during chat.</li>
+              <li><strong>Live Rubric Scorer:</strong> Immediate checks against 14 hard rules.</li>
+              <li><strong>Zero Friction Export:</strong> Manifest, scripts, and debrief in one run.</li>
+            </ul>
+            <div style="background: #fdf2f8; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; color: #9d174d; margin-top: 10px;">
+              ⚡ <em>The Vibe Coding Advantage:</em> You describe what you need, and code connects the entire pipeline.
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>The Core Philosophy:</strong> The hardest part of the competition is producing 10 consistent video clips while maintaining rigorous framework mapping. We automated the pipeline so students can focus on storytelling.
+          </div>
+          <span class="bottom-banner-tag">Vibe Coding</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>3 · AI SUPPORT</span>
+        <span>The contrast: Manual tool hopping vs. an integrated pipeline</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Both Speakers]</strong><br>
+        Lucia explains the frustration of manual tool coordination. Simon shows how an integrated tool eliminates the bottleneck.
+      </div>
+    </section>
+
+    <!-- Slide 11: RISE Scenario Studio Core Modules -->
+    <section class="slide theme-light" data-presenter="Simon" data-presenter-class="simon">
+      <div class="slide-header">
+        <span class="slide-eyebrow">APPROACH 2, MADE REAL</span>
+        <div class="slide-title">RISE Scenario Studio: One Platform, The Whole Job</div>
+        <div class="slide-subtitle">Everything you need to go from a rough idea to a submission-ready package.</div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-3" style="flex: 1;">
+          <div class="card-l highlight">
+            <div class="card-l-title">🎮 Question → Scenario</div>
+            <div class="card-l-body">
+              Replaces blank form filling with an interactive AI narrative partner. Recommends RISE competencies as your story unfolds.
+            </div>
+          </div>
+          <div class="card-l accent-purple">
+            <div class="card-l-title">🗺️ Interactive Mind Map</div>
+            <div class="card-l-body">
+              Visualizes the two-level decision tree live. Click nodes to inspect dialogue, evaluate choices, and export SVG graphs.
+            </div>
+          </div>
+          <div class="card-l accent-emerald">
+            <div class="card-l-title">✅ Live Criteria Meter</div>
+            <div class="card-l-body">
+              Live checks against the 14 competition hard rules. Highlights missing competence codes or binary choice violations.
+            </div>
+          </div>
+          <div class="card-l accent-sky">
+            <div class="card-l-title">🎬 Moving Pictures Pipeline</div>
+            <div class="card-l-body">
+              Clean 2D sprites on flat background keyed with despill, animated keyframes, and Simon's cloned voice. No video diffusion needed.
+            </div>
+          </div>
+          <div class="card-l accent-amber">
+            <div class="card-l-title">📊 Evidence, Not Vibes</div>
+            <div class="card-l-body">
+              Clip durations calculated from script phonemes; audio loudness mastered to -16.7 LUFS. Renders are strictly versioned.
+            </div>
+          </div>
+          <div class="card-l highlight">
+            <div class="card-l-title">📝 One-Click Export</div>
+            <div class="card-l-body">
+              Packages scenario description, rationale, debriefs, and AI declaration directly into the official organizer template.
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>You are using this exact platform today!</strong> During the upcoming hands-on block, you will use Question → Scenario (v3) to build your plan.
+          </div>
+          <span class="bottom-banner-tag">Live Studio</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>3 · AI SUPPORT</span>
+        <span>Studio capabilities: End-to-end assistance from prompt to debrief</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Simon's Platform Note]</strong><br>
+        Explain that this tool is built specifically for HKBU students entering the RISE competition.
+      </div>
+    </section>
+
+    <!-- Slide 12: Hands-on Practice & CCL Checkpoint (Fail-safe QR Image) -->
+    <section class="slide theme-light" data-presenter="Participants" data-presenter-class="both">
+      <div class="slide-header">
+        <span class="slide-eyebrow">PART FOUR & FIVE · HANDS-ON PRACTICE</span>
+        <div class="slide-title">Scan & Build Your Plan (~40 Minutes)</div>
+        <div class="slide-subtitle">Work in pairs or teams of up to 4. Complete your plan and claim CCL credits!</div>
+      </div>
+
+      <div class="slide-body">
+        <!-- Huge QR Hero Card -->
+        <div style="background: linear-gradient(135deg, #ffffff 0%, #fff7fb 100%); border: 2px solid rgba(236, 72, 153, 0.4); border-radius: 18px; padding: 22px 28px; box-shadow: 0 12px 30px rgba(236, 72, 153, 0.08); display: flex; align-items: center; gap: 32px; flex: 1.1;">
+          <!-- QR Code Box (Guaranteed Universal PNG Data URL Rendering) -->
+          <div style="background: white; padding: 12px; border-radius: 14px; border: 2px solid rgba(139, 92, 246, 0.25); box-shadow: 0 8px 24px rgba(0,0,0,0.08); width: 240px; height: 240px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <img src="data:image/png;base64,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" alt="RISE Scenario Studio QR Code" style="width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 8px;">
+          </div>
+
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px;">
+            <div style="font-size: 20px; font-weight: 800; color: var(--text-dark-primary);">🎓 Two Things at the Checkpoint for CCL Credits</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div style="background: #fdf2f8; border: 1.5px solid rgba(236, 72, 153, 0.3); border-radius: 14px; padding: 18px 22px;">
+                <strong style="color: var(--primary-pink-dark); font-size: 15.5px; display: block; margin-bottom: 6px;">1 · Show Completed Plan</strong>
+                <span style="font-size: 14px; color: var(--text-dark-secondary); line-height: 1.55; display: block;">Display your mind map & rubric score to Lucia/Simon.</span>
+              </div>
+              <div style="background: #f3e8ff; border: 1.5px solid rgba(139, 92, 246, 0.3); border-radius: 14px; padding: 18px 22px;">
+                <strong style="color: var(--primary-purple-dark); font-size: 15.5px; display: block; margin-bottom: 6px;">2 · Enter Student ID</strong>
+                <span style="font-size: 14px; color: var(--text-dark-secondary); line-height: 1.55; display: block;">Submit your HKBU ID on the checkpoint screen to record attendance!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- What "Done" Means Grid -->
+        <div class="card-l" style="padding: 12px 20px; flex: 0.9; justify-content: space-evenly;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div class="card-l-title" style="font-size: 16px;">📋 What "Done" Means Today (Your Plan Needs 6 Things):</div>
+            <span style="font-size: 13px; color: var(--primary-pink-dark); font-weight: 700;">A rough finished plan beats an unfinished perfect one</span>
+          </div>
+          <div class="grid-6" style="font-size: 14px; text-align: center; gap: 10px;">
+            <div style="background: #faf5f8; padding: 14px 10px; border-radius: 8px; border: 1px solid var(--border-light);">1. Theme & Situation</div>
+            <div style="background: #faf5f8; padding: 14px 10px; border-radius: 8px; border: 1px solid var(--border-light);">2. ≤2 Domains, ≤4 Competences</div>
+            <div style="background: #faf5f8; padding: 14px 10px; border-radius: 8px; border: 1px solid var(--border-light);">3. Decision 1 (3-4 choices)</div>
+            <div style="background: #faf5f8; padding: 14px 10px; border-radius: 8px; border: 1px solid var(--border-light);">4. Decision 2 (3-4 choices)</div>
+            <div style="background: #faf5f8; padding: 14px 10px; border-radius: 8px; border: 1px solid var(--border-light);">5. Debrief Outlines</div>
+            <div style="background: #faf5f8; padding: 14px 10px; border-radius: 8px; border: 1px solid var(--border-light);">6. AI-Use Note</div>
+          </div>
+        </div>
+
+        <!-- Bottom Banner -->
+        <div class="bottom-banner">
+          <div class="bottom-banner-text">
+            <strong>Facilitator Notice:</strong> Keep the QR code visible on screen throughout the 40-minute practice. We have paper fallback sign-in sheets if any phone battery dies.
+          </div>
+          <span class="bottom-banner-tag">Live Support</span>
+        </div>
+      </div>
+
+      <div class="slide-footer-bar">
+        <span>5 · HANDS-ON SESSION</span>
+        <span>Checkpoint: Enter your Student ID to claim CCL credit</span>
+      </div>
+
+      <div class="notes-content" style="display: none;">
+        <strong>[Hands-on Facilitation]</strong><br>
+        Leave this slide on screen during the whole 40-minute workshop block so latecomers can scan. Walk around to assist groups with prompts and branching logic.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Speaker Notes Drawer -->
+  <aside id="notes-panel">
+    <h4>
+      <span>📝 Speaker Notes</span>
+      <span style="font-size: 11px; color: var(--text-light-muted);">Toggle with [N]</span>
+    </h4>
+    <div id="notes-body"></div>
+  </aside>
+
+  <!-- Overview Grid Modal -->
+  <div id="overview-modal" onclick="window.closeOverview(event)">
+    <div class="overview-header">
+      <h2 style="font-size: 20px; font-weight: 700; color: white;">Workshop Slides Overview (12 Slides)</h2>
+      <button class="btn" onclick="window.toggleOverview()">Close (Esc)</button>
+    </div>
+    <div class="overview-grid" id="overview-grid-container"></div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <footer>
+    <div class="controls-left">
+      <button class="btn" onclick="window.prevSlide()" title="Previous (Left Arrow / PageUp)">◀ Prev</button>
+      <button class="btn btn-primary" onclick="window.nextSlide()" title="Next (Right Arrow / Space)">Next ▶</button>
+      <span class="counter" id="slide-counter">01 / 12</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button class="btn" onclick="window.toggleOverview()" title="View all slides [O]">⊞ Overview [O]</button>
+      <button class="btn" onclick="window.toggleNotes()" title="Speaker notes [N]">📝 Notes [N]</button>
+      <button class="btn" onclick="window.toggleFullscreen()" title="Fullscreen mode [F]">⛶ Fullscreen [F]</button>
+    </div>
+  </footer>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    let currentSlide = 0;
+    const totalSlides = slides.length;
+
+    const progressBar = document.getElementById('progress-bar');
+    const slideCounter = document.getElementById('slide-counter');
+    const presenterTag = document.getElementById('presenter-tag');
+    const notesPanel = document.getElementById('notes-panel');
+    const notesBody = document.getElementById('notes-body');
+    const overviewModal = document.getElementById('overview-modal');
+    const overviewGrid = document.getElementById('overview-grid-container');
+
+    // Build overview thumbnails
+    slides.forEach((slide, idx) => {
+      const titleEl = slide.querySelector('.slide-title');
+      const titleText = titleEl ? titleEl.textContent.trim().split('\n')[0] : `Slide ${idx + 1}`;
+      const presenter = slide.dataset.presenter || 'Both';
+
+      const thumb = document.createElement('div');
+      thumb.className = `thumb-card ${idx === 0 ? 'active' : ''}`;
+      thumb.innerHTML = `
+        <div class="thumb-num">SLIDE ${String(idx + 1).padStart(2, '0')}</div>
+        <div class="thumb-title">${titleText}</div>
+        <div class="thumb-presenter">🎙️ ${presenter}</div>
+      `;
+      thumb.onclick = () => {
+        window.goToSlide(idx + 1);
+        window.toggleOverview();
+      };
+      overviewGrid.appendChild(thumb);
+    });
+
+    function updateSlide() {
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlide);
+      });
+
+      // Update progress bar & counter
+      const progress = ((currentSlide + 1) / totalSlides) * 100;
+      progressBar.style.width = progress + '%';
+      slideCounter.textContent = `${String(currentSlide + 1).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+
+      // Update presenter badge
+      const activeSlide = slides[currentSlide];
+      const presenter = activeSlide.dataset.presenter || 'Lucia & Simon';
+      const pClass = activeSlide.dataset.presenterClass || 'both';
+      presenterTag.textContent = presenter;
+      presenterTag.className = `presenter-chip ${pClass}`;
+
+      // Update speaker notes
+      const notesEl = activeSlide.querySelector('.notes-content');
+      notesBody.innerHTML = notesEl ? notesEl.innerHTML : '<em>No speaker notes for this slide.</em>';
+
+      // Update overview active card
+      const thumbs = overviewGrid.querySelectorAll('.thumb-card');
+      thumbs.forEach((t, i) => t.classList.toggle('active', i === currentSlide));
+    }
+
+    window.nextSlide = function() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlide();
+      }
+    };
+
+    window.prevSlide = function() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlide();
+      }
+    };
+
+    window.goToSlide = function(n) {
+      const target = Math.max(0, Math.min(n - 1, totalSlides - 1));
+      currentSlide = target;
+      updateSlide();
+    };
+
+    window.toggleNotes = function() {
+      notesPanel.classList.toggle('open');
+    };
+
+    window.toggleOverview = function() {
+      overviewModal.classList.toggle('open');
+    };
+
+    window.closeOverview = function(e) {
+      if (e.target === overviewModal) {
+        overviewModal.classList.remove('open');
+      }
+    };
+
+    window.toggleFullscreen = function() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    };
+
+    window.toggleOption = function(btn) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.option-card-stable').forEach(b => {
+        if (b !== btn) b.classList.remove('selected');
+      });
+      btn.classList.toggle('selected');
+    };
+
+    // Keyboard Navigation
+    window.addEventListener('keydown', (e) => {
+      if (overviewModal.classList.contains('open')) {
+        if (e.key === 'Escape') window.toggleOverview();
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        window.nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace') {
+        e.preventDefault();
+        window.prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        window.goToSlide(1);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        window.goToSlide(totalSlides);
+      } else if (e.key === 'n' || e.key === 'N') {
+        window.toggleNotes();
+      } else if (e.key === 'o' || e.key === 'O') {
+        window.toggleOverview();
+      } else if (e.key === 'f' || e.key === 'F') {
+        window.toggleFullscreen();
+      }
+    });
+
+    // Touch Swipe Navigation for mobile / tablet
+    let touchStartX = 0;
+    let touchEndX = 0;
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+    document.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, false);
+
+    function handleSwipe() {
+      const threshold = 50;
+      if (touchEndX < touchStartX - threshold) {
+        window.nextSlide();
+      }
+      if (touchEndX > touchStartX + threshold) {
+        window.prevSlide();
+      }
+    }
+
+    // Init
+    updateSlide();
+  </script>
+
+  <!-- Slide 3: Scan-to-vote QR (generated locally, no external service) -->
+  <script src="rise_qrcode_gen.js"></script>
+  <script>
+    (function () {
+      // Used only when the deck is opened directly (file://) without vote_server.py.
+      // When served by vote_server.py, the QR auto-uses the LAN URL it reports.
+      var FALLBACK_URL = 'http://172.28.242.91:8731/rise_vote.html';
+
+      function draw(url) {
+        var el = document.getElementById('slide3-qr');
+        if (!el || typeof qrcode === 'undefined') return;
+        try {
+          var qr = qrcode(0, 'M');
+          qr.addData(url);
+          qr.make();
+          el.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+          var svg = el.querySelector('svg');
+          if (svg) { svg.setAttribute('width', '96'); svg.setAttribute('height', '96'); }
+          el.title = url;
+        } catch (e) { /* leave blank */ }
+      }
+
+      fetch('api/vote-url')
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (d) { draw(d.url); })
+        .catch(function () { draw(FALLBACK_URL); });
+    })();
+  </script>
+</body>
+</html>
